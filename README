@@ -1,0 +1,31 @@
+This is an OptimFROG plugin for the Audacious media player.
+
+To build, the OptimFROG SDK (http://www.losslessaudio.org/SDK.php) is
+required.  Only version 1.400 (corresponding to OptimFROG 5.000) and
+later are supported.  In addition, for vendors who create separate
+development versions of packages, the development version of audacious
+is required; this will likely be called something like audacious-dev or
+audacious-devel.
+
+GNU make is required, as is a compiler that supports C++11.  Recent
+versions of GCC and Clang are both supported.  Other C++11 compilers
+should work, too, but may require the tweaking of compiler.mk.
+
+Once dependencies are installed, build as follows:
+
+$ make OPTIMFROG=/path/to/OptimFROG_Linux_x64_5002/SDK
+
+For the time being you must explicitly pass the location of the
+OptimFROG SDK.  Moreover, the shared library (libOptimFROG.so) must be
+available to the dynamic linker.  The build process sets the RPATH to
+the build-time location of the library, but a more permanent location
+(such as /usr/lib) would be less fragile.
+
+To install:
+
+$ make install
+
+This installs the plugin into Audacious's input plugin directory.  To
+install to a staging area, such as for packaging:
+
+$ make install DESTDIR=/path/to/staging
