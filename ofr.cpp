@@ -87,6 +87,9 @@ class OFR
       }
     }
 
+    OFR(const OFR &) = delete;
+    OFR &operator=(const OFR &) = delete;
+
     ~OFR()
     {
       OptimFROG_close(decoder);
@@ -115,9 +118,6 @@ class OFR
     long bitrate() { return info.bitrate; }
 
   private:
-    OFR(const OFR &);
-    OFR &operator=(const OFR &);
-
     void *decoder;
     OptimFROG_Info info;
 
