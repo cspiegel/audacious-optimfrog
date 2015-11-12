@@ -24,6 +24,7 @@
  * SUCH DAMAGE.
  */
 
+#include <cctype>
 #include <cstdlib>
 #include <exception>
 #include <map>
@@ -56,10 +57,11 @@ class OFR
         ofr_get_pos,
         ofr_seek,
       };
+      OptimFROG_Tags ofr_tags;
 
       if(decoder == C_NULL) throw InvalidFile();
 
-      if(!OptimFROG_openExt(decoder, &rint, &file, C_FALSE))
+      if(!OptimFROG_openExt(decoder, &rint, &file, C_TRUE))
       {
         OptimFROG_destroyInstance(decoder);
         throw InvalidFile();
@@ -85,6 +87,21 @@ class OFR
         OptimFROG_destroyInstance(decoder);
         throw InvalidFile();
       }
+
+      OptimFROG_getTags(decoder, &ofr_tags);
+      for(uInt32_t i = 0; i < ofr_tags.keyCount; i++)
+      {
+        std::string key;
+
+        /* Ensure all keys are lowercase for easy comparison. */
+        for(std::size_t j = 0; ofr_tags.keys[i][j] != 0; j++)
+        {
+          key.push_back(std::tolower(static_cast<unsigned char>(ofr_tags.keys[i][j])));
+        }
+
+        tags.insert(std::pair<std::string, std::string>(key, ofr_tags.values[i]));
+      }
+      OptimFROG_freeTags(&ofr_tags);
     }
 
     OFR(const OFR &) = delete;
@@ -117,11 +134,15 @@ class OFR
     long length() { return info.length_ms; }
     long bitrate() { return info.bitrate; }
 
+    const std::string get_tag(std::string tag) { return tags.at(tag); }
+
   private:
     void *decoder;
     OptimFROG_Info info;
 
     int format_;
+
+    std::map<std::string, std::string> tags;
 
     static VFSFile *VFS(void *instance) { return reinterpret_cast<VFSFile *>(instance); }
 
@@ -164,24 +185,33 @@ class OFRPlugin : public InputPlugin
       }
     }
 
-    Tuple read_tuple(const char *filename, VFSFile &file)
+    bool read_tag(const char *filename, VFSFile &file, Tuple *tuple, Index<char> *image)
     {
-      Tuple tuple;
+      if(!tuple) return true;
 
       try
       {
         OFR ofr(file);
 
-        tuple.set_int(Tuple::Length, ofr.length());
-        tuple.set_filename(filename);
-        tuple.set_format("OptimFROG", ofr.channels(), ofr.rate(), ofr.bitrate());
-        if(file.fseek(0, VFS_SEEK_SET) == 0) audtag::tuple_read(tuple, file);
+        tuple->set_int(Tuple::Length, ofr.length());
+        tuple->set_filename(filename);
+        tuple->set_format("OptimFROG", ofr.channels(), ofr.rate(), ofr.bitrate());
+
+        set_tag(ofr, tuple, Tuple::Title, "title", false);
+        set_tag(ofr, tuple, Tuple::Artist, "artist", false);
+        set_tag(ofr, tuple, Tuple::Album, "album", false);
+        set_tag(ofr, tuple, Tuple::Comment, "comment", false);
+        set_tag(ofr, tuple, Tuple::Genre, "genre", false);
+        set_tag(ofr, tuple, Tuple::Composer, "composer", false);
+        set_tag(ofr, tuple, Tuple::Year, "year", true);
+        set_tag(ofr, tuple, Tuple::Track, "track", true);
+
+        return true;
       }
       catch(OFR::InvalidFile)
       {
+        return false;
       }
-
-      return tuple;
     }
 
     bool write_tuple(const char *filename, VFSFile &file, const Tuple &tuple)
@@ -217,6 +247,32 @@ class OFRPlugin : public InputPlugin
       }
 
       return true;
+    }
+
+  private:
+    void set_tag(OFR &ofr, Tuple *tuple, Tuple::Field field, std::string key, bool is_int)
+    {
+      try
+      {
+        std::string result = ofr.get_tag(key);
+
+        if(is_int)
+        {
+          tuple->set_int(field, std::stoi(result));
+        }
+        else
+        {
+          tuple->set_str(field, result.c_str());
+        }
+      }
+      catch(const std::out_of_range &)
+      {
+        /* for ofr.get_tag() */
+      }
+      catch(const std::invalid_argument &)
+      {
+        /* for std::stoi() */
+      }
     }
 };
 
