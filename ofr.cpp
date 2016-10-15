@@ -185,17 +185,15 @@ class OFRPlugin : public InputPlugin
       }
     }
 
-    bool read_tag(const char *filename, VFSFile &file, Tuple *tuple, Index<char> *image)
+    bool read_tag(const char *filename, VFSFile &file, Tuple &tuple, Index<char> *)
     {
-      if(!tuple) return true;
-
       try
       {
         OFR ofr(file);
 
-        tuple->set_int(Tuple::Length, ofr.length());
-        tuple->set_filename(filename);
-        tuple->set_format("OptimFROG", ofr.channels(), ofr.rate(), ofr.bitrate());
+        tuple.set_int(Tuple::Length, ofr.length());
+        tuple.set_filename(filename);
+        tuple.set_format("OptimFROG", ofr.channels(), ofr.rate(), ofr.bitrate());
 
         set_tag(ofr, tuple, Tuple::Title, "title", false);
         set_tag(ofr, tuple, Tuple::Artist, "artist", false);
@@ -216,7 +214,7 @@ class OFRPlugin : public InputPlugin
 
     bool write_tuple(const char *filename, VFSFile &file, const Tuple &tuple)
     {
-      return audtag::tuple_write(tuple, file, audtag::TagType::APE);
+      return audtag::write_tuple(file, tuple, audtag::TagType::APE);
     }
 
     bool play(const char *filename, VFSFile &file)
@@ -250,7 +248,7 @@ class OFRPlugin : public InputPlugin
     }
 
   private:
-    void set_tag(OFR &ofr, Tuple *tuple, Tuple::Field field, std::string key, bool is_int)
+    void set_tag(OFR &ofr, Tuple &tuple, Tuple::Field field, std::string key, bool is_int)
     {
       try
       {
@@ -258,11 +256,11 @@ class OFRPlugin : public InputPlugin
 
         if(is_int)
         {
-          tuple->set_int(field, std::stoi(result));
+          tuple.set_int(field, std::stoi(result));
         }
         else
         {
-          tuple->set_str(field, result.c_str());
+          tuple.set_str(field, result.c_str());
         }
       }
       catch(const std::out_of_range &)
