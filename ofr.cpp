@@ -81,7 +81,7 @@ class OFR
       {
         format_ = formats.at(std::string(info.sampleType));
       }
-      catch(std::out_of_range)
+      catch(const std::out_of_range &)
       {
         OptimFROG_close(decoder);
         OptimFROG_destroyInstance(decoder);
@@ -179,7 +179,7 @@ class OFRPlugin : public InputPlugin
         OFR ofr(file);
         return true;
       }
-      catch(OFR::InvalidFile)
+      catch(const OFR::InvalidFile &)
       {
         return false;
       }
@@ -206,7 +206,7 @@ class OFRPlugin : public InputPlugin
 
         return true;
       }
-      catch(OFR::InvalidFile)
+      catch(const OFR::InvalidFile &)
       {
         return false;
       }
@@ -239,7 +239,7 @@ class OFRPlugin : public InputPlugin
           write_audio(buf, n);
         }
       }
-      catch(OFR::InvalidFile)
+      catch(const OFR::InvalidFile &)
       {
         return false;
       }
