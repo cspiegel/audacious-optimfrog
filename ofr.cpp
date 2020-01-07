@@ -99,7 +99,7 @@ class OFR
           key.push_back(std::tolower(static_cast<unsigned char>(ofr_tags.keys[i][j])));
         }
 
-        tags.insert(std::pair<std::string, std::string>(key, ofr_tags.values[i]));
+        tags.insert(std::pair<std::string, std::string>(key, std::string(ofr_tags.values[i])));
       }
       OptimFROG_freeTags(&ofr_tags);
     }
